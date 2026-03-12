@@ -290,6 +290,52 @@
             margin-top: 7px;
         }
 
+    
+        /* ========== RATING APLIKASI ========== */
+        .rating-card {
+            background: white; border-radius: 16px;
+            padding: 18px 20px; box-shadow: var(--shadow);
+            margin-top: 14px; text-align: center;
+        }
+        .rating-card h4 { font-size:13.5px; font-weight:800; color:var(--navy); margin-bottom:4px; }
+        .rating-card p  { font-size:12px; color:var(--muted); margin-bottom:13px; }
+        .stars-wrap { display:flex; justify-content:center; gap:6px; margin-bottom:12px; }
+        .star-btn {
+            font-size:30px; cursor:pointer; background:none; border:none;
+            transition:transform .15s; line-height:1; padding:0;
+            filter: grayscale(1) opacity(.4);
+        }
+        .star-btn.active { filter:none; transform:scale(1.12); }
+        .star-btn:hover  { filter:none; transform:scale(1.2); }
+        .rating-avg {
+            display:inline-flex; align-items:center; gap:6px;
+            background:var(--bg); border-radius:20px;
+            padding:5px 14px; font-size:12.5px; font-weight:700; color:var(--navy);
+        }
+        .rating-avg span { color:var(--gold); font-size:15px; }
+        .rating-thanks {
+            color: var(--teal); font-weight:700; font-size:13px;
+            animation: fadeIn .3s ease;
+        }
+
+        /* ========== RATING LAPORAN ========== */
+        .laporan-rating-box {
+            background: rgba(245,158,11,.07);
+            border: 1.5px solid rgba(245,158,11,.25);
+            border-radius: 12px; padding: 15px; margin-top: 14px;
+            text-align: center;
+        }
+        .laporan-rating-box h5 { font-size:13px; font-weight:800; color:var(--navy); margin-bottom:4px; }
+        .laporan-rating-box p  { font-size:11.5px; color:var(--muted); margin-bottom:10px; }
+        .lap-stars { display:flex; justify-content:center; gap:5px; margin-bottom:8px; }
+        .lap-star {
+            font-size:26px; cursor:pointer; background:none; border:none;
+            filter:grayscale(1) opacity(.35); transition:all .15s; padding:0; line-height:1;
+        }
+        .lap-star.active { filter:none; }
+        .lap-star:hover  { filter:none; transform:scale(1.15); }
+        .rating-done-msg { font-size:12.5px; font-weight:700; color:var(--teal); }
+
     </style>
 </head>
 <body>
@@ -348,6 +394,22 @@
                 <p>Kelola dan perbarui status laporan (khusus pengelola)</p>
             </div>
         </div>
+
+        <div class="rating-card">
+            <h4>⭐ Beri Penilaian Aplikasi</h4>
+            <p>Seberapa puas Anda dengan SI-CEKAT?</p>
+            <div class="stars-wrap" id="appStars">
+                <button class="star-btn" onclick="rateApp(1)">⭐</button>
+                <button class="star-btn" onclick="rateApp(2)">⭐</button>
+                <button class="star-btn" onclick="rateApp(3)">⭐</button>
+                <button class="star-btn" onclick="rateApp(4)">⭐</button>
+                <button class="star-btn" onclick="rateApp(5)">⭐</button>
+            </div>
+            <div id="appRatingInfo">
+                <div class="rating-avg"><span>⭐</span> <span id="avgVal">–</span> / 5 &nbsp;·&nbsp; <span id="totalVote">0</span> penilaian</div>
+            </div>
+        </div>
+
         <div class="footer">SI-CEKAT &nbsp;•&nbsp; SMAN 1 Balongpanggang<br>Sistem Informasi Cepat Efisien Akuntabel Transparan</div>
     </div>
 </div>
@@ -557,6 +619,7 @@ function showPage(id) {
     document.getElementById('btnBack').classList.toggle('visible', navHistory.length > 1 && id !== 'home');
     window.scrollTo(0,0);
     if (id === 'admin') loadAdminReports();
+    if (id === 'home' && fbOK) loadAppRating();
 }
 
 function goBack() {
@@ -764,7 +827,9 @@ function buildDetailHTML(d, docId, isAdmin) {
         <div class="d-row"><div class="d-lbl">Tanggal Lapor</div><div class="d-val">${fmtDate(d.tanggal)}</div></div>
         <div class="d-row"><div class="d-lbl">Terakhir Update</div><div class="d-val">${fmtDate(d.updatedAt)}</div></div>
         <div class="d-row" style="flex-direction:column;gap:7px;"><div class="d-lbl">Deskripsi</div><div class="d-val" style="line-height:1.75;">${d.deskripsi}</div></div>
-        ${noteBlock}${fotoBlock}${adminBtn}`;
+        ${noteBlock}${fotoBlock}
+        ${!isAdmin && d.status === 'selesai' ? buildLaporanRating(d, docId) : ''}
+        ${adminBtn}`;
 }
 
 // ============================================================
