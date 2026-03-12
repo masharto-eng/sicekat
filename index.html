@@ -922,6 +922,92 @@ function openImg(url) { document.getElementById('imgSrc').src=url; document.getE
 function closeImg()   { document.getElementById('imgOv').classList.remove('open'); document.getElementById('imgSrc').src=''; }
 document.getElementById('imgOv').addEventListener('click', e=>{if(e.target===e.currentTarget)closeImg();});
 document.getElementById('editOv').addEventListener('click',e=>{if(e.target===e.currentTarget)closeEdit();});
+
+// ============================================================
+//  RATING APLIKASI
+// ============================================================
+async function loadAppRating() {
+    try {
+        const snap = await db.collection('rating_app').get();
+        if (snap.empty) return;
+        let total = 0, count = 0;
+        snap.forEach(d => { total += d.data().nilai; count++; });
+        const avg = (total / count).toFixed(1);
+        const avgEl   = document.getElementById('avgVal');
+        const totalEl = document.getElementById('totalVote');
+        if (avgEl)   avgEl.textContent   = avg;
+        if (totalEl) totalEl.textContent = count;
+    } catch(e) { console.warn('Load rating gagal:', e); }
+}
+
+function highlightAppStars(n) {
+    document.querySelectorAll('#appStars .star-btn').forEach((s, i) => {
+        s.classList.toggle('active', i < n);
+    });
+}
+
+async function rateApp(n) {
+    if (localStorage.getItem('app_rated')) {
+        toast('Anda sudah memberikan penilaian sebelumnya 🙏', 'info');
+        return;
+    }
+    highlightAppStars(n);
+    if (!fbOK) { toast('⚠️ Firebase belum dikonfigurasi', 'err'); return; }
+    try {
+        await db.collection('rating_app').add({
+            nilai: n,
+            waktu: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        localStorage.setItem('app_rated', '1');
+        const infoEl = document.getElementById('appRatingInfo');
+        if (infoEl) infoEl.innerHTML = '<div class="rating-thanks">✅ Terima kasih atas penilaian Anda!</div>';
+        await loadAppRating();
+        toast('⭐ Penilaian berhasil disimpan!', 'ok');
+    } catch(e) { console.error(e); toast('Gagal menyimpan penilaian', 'err'); }
+}
+
+// ============================================================
+//  RATING LAPORAN (setelah selesai)
+// ============================================================
+function buildLaporanRating(d, docId) {
+    if (d.ratingPelapor && d.ratingPelapor > 0) {
+        const stars = '⭐'.repeat(d.ratingPelapor) + '☆'.repeat(5 - d.ratingPelapor);
+        return `<div class="laporan-rating-box">
+            <h5>Penilaian Penanganan</h5>
+            <div class="rating-done-msg">${stars}</div>
+            <p style="margin:6px 0 0;font-size:11px;">Terima kasih atas penilaian Anda!</p>
+        </div>`;
+    }
+    return `<div class="laporan-rating-box" id="lrBox_${docId}">
+        <h5>📋 Nilai Penanganan Laporan Ini</h5>
+        <p>Apakah laporan Anda ditangani dengan baik?</p>
+        <div class="lap-stars">
+            <button class="lap-star" onclick="rateLaporan('${docId}',1)">⭐</button>
+            <button class="lap-star" onclick="rateLaporan('${docId}',2)">⭐</button>
+            <button class="lap-star" onclick="rateLaporan('${docId}',3)">⭐</button>
+            <button class="lap-star" onclick="rateLaporan('${docId}',4)">⭐</button>
+            <button class="lap-star" onclick="rateLaporan('${docId}',5)">⭐</button>
+        </div>
+    </div>`;
+}
+
+async function rateLaporan(docId, n) {
+    if (!fbOK) return;
+    try {
+        await db.collection('laporan').doc(docId).update({ ratingPelapor: n });
+        const box = document.getElementById('lrBox_' + docId);
+        if (box) {
+            const stars = '⭐'.repeat(n) + '☆'.repeat(5 - n);
+            box.innerHTML = `<h5>Penilaian Penanganan</h5>
+                <div class="rating-done-msg">${stars}</div>
+                <p style="margin:6px 0 0;font-size:11px;">Terima kasih!</p>`;
+        }
+        toast('⭐ Penilaian berhasil disimpan!', 'ok');
+    } catch(e) { console.error(e); toast('Gagal menyimpan penilaian', 'err'); }
+}
+
+// Load rating saat halaman pertama dibuka
+window.addEventListener('load', () => { if (fbOK) loadAppRating(); });
 </script>
 </body>
 </html>
