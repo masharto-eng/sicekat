@@ -426,6 +426,23 @@
             </div>
 
             <div class="form-group">
+                <label class="form-label">
+                    Nomor WhatsApp
+                    <span style="color:var(--muted);font-weight:400;">(opsional — untuk notifikasi status laporan)</span>
+                </label>
+                <div style="position:relative;">
+                    <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13.5px;color:var(--muted);font-weight:600;">+62</span>
+                    <input type="tel" class="form-input" id="inpWa"
+                        placeholder="81234567890"
+                        style="padding-left:42px;"
+                        oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:5px;">
+                    💬 Anda akan mendapat pesan WA otomatis saat status laporan diperbarui
+                </div>
+            </div>
+
+            <div class="form-group">
                 <label class="form-label">Saya Adalah <span class="req">*</span></label>
                 <div class="radio-group">
                     <div class="radio-opt"><input type="radio" name="peran" id="r-siswa" value="Siswa"><label for="r-siswa">🎓 Siswa</label></div>
@@ -596,6 +613,14 @@ const IMGBB_API_KEY = "2bf764d46332b31251379f740f4bd749";
 const ADMIN_PASSWORD = "sicekat2024";
 
 // ============================================================
+//  📲 FONNTE — Notifikasi WhatsApp
+//  Daftar gratis: https://fonnte.com → ambil Token
+//  Nomor admin: format 628xxx (tanpa + atau 0)
+// ============================================================
+const FONNTE_TOKEN   = "Pb26QNoJrmDEa2qRA3GJ";
+const ADMIN_WA       = "6285733175825"; // contoh: 6281234567890
+
+// ============================================================
 //  INIT FIREBASE
 // ============================================================
 let db, fbOK = false;
@@ -741,6 +766,7 @@ async function submitReport() {
         loading(true,'Menyimpan laporan...');
         await db.collection('laporan').add({
             reportId: rid, nama, peran, jenis, deskripsi: desk,
+            nomorWa: (()=>{ const v=document.getElementById('inpWa').value.trim(); return v ? '62'+v.replace(/^0/,'') : ''; })(),
             fotoUrl, status:'menunggu', catatan:'',
             tanggal:   firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -767,6 +793,7 @@ function copyId() {
 
 function resetForm() {
     document.getElementById('inpNama').value = '';
+    document.getElementById('inpWa').value   = '';
     document.querySelectorAll('input[name="peran"]').forEach(r=>r.checked=false);
     document.querySelectorAll('input[name="jenis"]').forEach(r=>r.checked=false);
     document.getElementById('inpDesk').value              = '';
@@ -822,6 +849,7 @@ function buildDetailHTML(d, docId, isAdmin) {
         </div>
         <div class="progress-wrap">${sc(0)}${sc(1)}${sc(2)}</div>
         <div class="d-row"><div class="d-lbl">Nama Pelapor</div><div class="d-val">${d.nama}</div></div>
+        ${d.nomorWa ? `<div class="d-row"><div class="d-lbl">WhatsApp</div><div class="d-val">+${d.nomorWa} <span style="font-size:11px;color:var(--teal);font-weight:600;">(notif aktif)</span></div></div>` : ''}
         <div class="d-row"><div class="d-lbl">Sebagai</div><div class="d-val">${d.peran}</div></div>
         <div class="d-row"><div class="d-lbl">Jenis Laporan</div><div class="d-val">${d.jenis}</div></div>
         <div class="d-row"><div class="d-lbl">Tanggal Lapor</div><div class="d-val">${fmtDate(d.tanggal)}</div></div>
@@ -840,9 +868,10 @@ function adminLogin() {
         document.getElementById('adminPwd').value = '';
         showPage('admin');
         toast('✅ Selamat datang, Admin!','ok');
+        startAdminNotif();
     } else { toast('❌ Password salah','err'); }
 }
-function adminOut() { navHistory=['home']; showPage('home'); toast('Berhasil keluar.',''); }
+function adminOut() { stopAdminNotif(); navHistory=['home']; showPage('home'); toast('Berhasil keluar.',''); }
 
 async function loadAdminReports() {
     if (!fbOK) {
@@ -905,6 +934,11 @@ async function saveStatus() {
         await db.collection('laporan').doc(docId).update({ status, catatan:note, updatedAt:firebase.firestore.FieldValue.serverTimestamp() });
         loading(false);
         toast('✅ Status berhasil diperbarui!','ok');
+        // Kirim notifikasi WA ke pelapor jika ada nomor WA
+        const rpt = allRpts.find(x=>x.id===docId);
+        if (rpt && rpt.nomorWa) {
+            kirimWaPerlapor(rpt.nomorWa, rpt.nama, rpt.reportId, status, note);
+        }
         const idx = allRpts.findIndex(r=>r.id===docId);
         if (idx!==-1) { allRpts[idx].status=status; allRpts[idx].catatan=note; }
         if (document.getElementById('page-admin-detail').classList.contains('active')) {
@@ -922,6 +956,117 @@ function openImg(url) { document.getElementById('imgSrc').src=url; document.getE
 function closeImg()   { document.getElementById('imgOv').classList.remove('open'); document.getElementById('imgSrc').src=''; }
 document.getElementById('imgOv').addEventListener('click', e=>{if(e.target===e.currentTarget)closeImg();});
 document.getElementById('editOv').addEventListener('click',e=>{if(e.target===e.currentTarget)closeEdit();});
+
+
+// ============================================================
+//  🔔 NOTIFIKASI BROWSER UNTUK ADMIN
+// ============================================================
+let unsubscribeSnapshot = null;
+
+async function startAdminNotif() {
+    // Minta izin notifikasi
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "default") {
+        await Notification.requestPermission();
+    }
+    if (Notification.permission !== "granted") return;
+
+    // Realtime listener — dengarkan laporan baru
+    if (unsubscribeSnapshot) unsubscribeSnapshot(); // stop listener lama
+    const latestTime = new Date();
+    unsubscribeSnapshot = db.collection('laporan')
+        .where('tanggal', '>', firebase.firestore.Timestamp.fromDate(latestTime))
+        .onSnapshot(snap => {
+            snap.docChanges().forEach(change => {
+                if (change.type === 'added') {
+                    const d = change.doc.data();
+                    showBrowserNotif(d);
+                    toast(`🔔 Laporan baru dari ${d.nama}!`, 'info');
+                    // Kirim WA ke admin
+                    kirimWaAdmin(d);
+                    // Refresh list jika halaman admin sedang aktif
+                    if (document.getElementById('page-admin').classList.contains('active')) {
+                        loadAdminReports();
+                    }
+                }
+            });
+        });
+}
+
+function stopAdminNotif() {
+    if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+}
+
+function showBrowserNotif(d) {
+    if (Notification.permission !== 'granted') return;
+    const n = new Notification('📋 Laporan Baru — SI-CEKAT', {
+        body: `${d.nama} (${d.peran}) melaporkan: ${d.jenis}\n"${(d.deskripsi||'').substring(0,80)}..."`,
+        icon: 'https://cdn-icons-png.flaticon.com/512/2921/2921822.png',
+        badge:'https://cdn-icons-png.flaticon.com/512/2921/2921822.png',
+        tag: 'sicekat-notif'
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+    setTimeout(() => n.close(), 8000);
+}
+
+// ============================================================
+//  💬 NOTIFIKASI WHATSAPP VIA FONNTE
+// ============================================================
+async function kirimWaAdmin(d) {
+    if (FONNTE_TOKEN === 'GANTI_FONNTE_TOKEN' || !ADMIN_WA) return;
+    let pesan = `*🔔 Laporan Baru Masuk — SI-CEKAT*\n\n`;
+    pesan += `📋 *ID:* ${d.reportId}\n`;
+    pesan += `👤 *Pelapor:* ${d.nama} (${d.peran})\n`;
+    pesan += `📂 *Jenis:* ${d.jenis}\n`;
+    pesan += `📝 *Deskripsi:*\n${(d.deskripsi||'').substring(0,150)}...\n\n`;
+    pesan += `Segera tindaklanjuti melalui Panel Admin SI-CEKAT.`;
+    try {
+        await fetch('https://api.fonnte.com/send', {
+            method: 'POST',
+            headers: { 'Authorization': FONNTE_TOKEN },
+            body: new URLSearchParams({ target: ADMIN_WA, message: pesan, countryCode: '62' })
+        });
+    } catch(e) { console.warn('Kirim WA admin gagal:', e); }
+}
+
+
+    if (!nomorWa || FONNTE_TOKEN === 'GANTI_FONNTE_TOKEN') return;
+
+    const statusLabel = {
+        menunggu: '⏳ Menunggu',
+        diproses: '⚙️ Sedang Diproses',
+        selesai:  '✅ Selesai'
+    }[status] || status;
+
+    let pesan = `*SI-CEKAT — SMAN 1 Balongpanggang*
+
+`;
+    pesan += `Halo, *${nama}*! 👋
+`;
+    pesan += `Status laporan Anda telah diperbarui.
+
+`;
+    pesan += `📋 *ID Laporan:* ${reportId}
+`;
+    pesan += `📌 *Status Baru:* ${statusLabel}
+`;
+    if (catatan) pesan += `💬 *Catatan Admin:*
+${catatan}
+`;
+    pesan += `
+Cek detail laporan Anda di aplikasi SI-CEKAT dengan memasukkan ID laporan di atas.
+`;
+    pesan += `_Terima kasih telah menggunakan SI-CEKAT_ 🙏`;
+
+    try {
+        await fetch('https://api.fonnte.com/send', {
+            method: 'POST',
+            headers: { 'Authorization': FONNTE_TOKEN },
+            body: new URLSearchParams({ target: nomorWa, message: pesan, countryCode: '62' })
+        });
+        console.log('WA terkirim ke', nomorWa);
+    } catch(e) { console.warn('Kirim WA gagal:', e); }
+}
 
 // ============================================================
 //  RATING APLIKASI
