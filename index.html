@@ -1029,7 +1029,7 @@ async function kirimWaAdmin(d) {
     } catch(e) { console.warn('Kirim WA admin gagal:', e); }
 }
 
-
+async function kirimWaPerlapor(nomorWa, nama, reportId, status, catatan) {
     if (!nomorWa || FONNTE_TOKEN === 'GANTI_FONNTE_TOKEN') return;
 
     const statusLabel = {
