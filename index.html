@@ -336,6 +336,50 @@
         .lap-star:hover  { filter:none; transform:scale(1.15); }
         .rating-done-msg { font-size:12.5px; font-weight:700; color:var(--teal); }
 
+    
+        /* ========== HALAMAN SURVEI KEPUASAN ========== */
+        .survey-hero {
+            text-align: center;
+            padding: 30px 16px 10px;
+        }
+        .survey-emoji { font-size: 52px; margin-bottom: 12px; display: block; }
+        .survey-title { font-size: 20px; font-weight: 800; color: var(--navy); margin-bottom: 8px; line-height: 1.3; }
+        .survey-sub   { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+        .face-grid {
+            display: flex; justify-content: center;
+            gap: 10px; flex-wrap: wrap;
+            margin: 22px 0 8px;
+        }
+        .face-btn {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 6px;
+            background: white; border: 2px solid var(--border);
+            border-radius: 16px; padding: 14px 10px;
+            cursor: pointer; transition: all .2s;
+            min-width: 70px; flex: 1;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .face-btn:hover   { border-color: var(--teal); transform: translateY(-3px); box-shadow: var(--shadow); }
+        .face-btn.selected { border-color: var(--teal); background: rgba(13,148,136,.08); transform: translateY(-3px); box-shadow: var(--shadow); }
+        .face-icon { font-size: 32px; line-height: 1; }
+        .face-lbl  { font-size: 10.5px; font-weight: 700; color: var(--muted); text-align: center; }
+        .face-btn.selected .face-lbl { color: var(--teal); }
+
+        .survey-comment {
+            margin-top: 4px;
+        }
+        .survey-skip {
+            text-align: center; margin-top: 10px;
+            font-size: 12px; color: var(--muted);
+            cursor: pointer; text-decoration: underline;
+        }
+        .survey-skip:hover { color: var(--text); }
+        .survey-done {
+            text-align: center; padding: 30px 16px;
+        }
+        .survey-done .s-icon { margin-bottom: 14px; }
+
     </style>
 </head>
 <body>
@@ -519,6 +563,69 @@
     <div class="container"><div class="card" id="detailCard"></div></div>
 </div>
 
+<!-- ================================================ PAGE: SURVEI KEPUASAN -->
+<div class="page" id="page-survey">
+    <div class="container">
+        <div class="card" id="surveyForm">
+            <div class="survey-hero">
+                <span class="survey-emoji">💛</span>
+                <div class="survey-title">Seberapa puas Anda dengan<br>Pelayanan SMANIBA?</div>
+                <div class="survey-sub">Penilaian Anda membantu kami terus berkembang</div>
+            </div>
+
+            <div class="face-grid" id="faceGrid">
+                <button class="face-btn" onclick="pilihPuas(1, this)">
+                    <span class="face-icon">😡</span>
+                    <span class="face-lbl">Sangat<br>Tidak Puas</span>
+                </button>
+                <button class="face-btn" onclick="pilihPuas(2, this)">
+                    <span class="face-icon">😞</span>
+                    <span class="face-lbl">Tidak<br>Puas</span>
+                </button>
+                <button class="face-btn" onclick="pilihPuas(3, this)">
+                    <span class="face-icon">😐</span>
+                    <span class="face-lbl">Cukup<br>Puas</span>
+                </button>
+                <button class="face-btn" onclick="pilihPuas(4, this)">
+                    <span class="face-icon">😊</span>
+                    <span class="face-lbl">Puas</span>
+                </button>
+                <button class="face-btn" onclick="pilihPuas(5, this)">
+                    <span class="face-icon">🤩</span>
+                    <span class="face-lbl">Sangat<br>Puas</span>
+                </button>
+            </div>
+
+            <div class="form-group survey-comment" id="surveyCommentBox" style="display:none;">
+                <label class="form-label">Komentar atau Saran <span style="color:var(--muted);font-weight:400;">(opsional)</span></label>
+                <textarea class="form-textarea" id="surveyComment"
+                    placeholder="Ceritakan pengalaman Anda atau berikan saran untuk SMANIBA..."
+                    style="min-height:80px;"></textarea>
+            </div>
+
+            <button class="btn btn-teal btn-full" id="btnSurvey" onclick="kirimSurvei()"
+                style="display:none;margin-top:6px;">
+                💌 &nbsp;Kirim Penilaian
+            </button>
+
+            <div class="survey-skip" onclick="showPage('home')">Lewati, kembali ke beranda →</div>
+        </div>
+
+        <div class="card" id="surveyDone" style="display:none;">
+            <div class="survey-done">
+                <div class="s-icon">🎉</div>
+                <h3 style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px;">Terima Kasih!</h3>
+                <p style="color:var(--muted);font-size:13.5px;line-height:1.75;">
+                    Penilaian Anda sangat berarti bagi SMAN 1 Balongpanggang.<br>
+                    Kami akan terus berusaha memberikan pelayanan terbaik. 🙏
+                </p>
+                <br>
+                <button class="btn btn-teal btn-full" onclick="showPage('home')">🏠 &nbsp;Kembali ke Beranda</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ADMIN LOGIN -->
 <div class="page" id="page-admin-login">
     <div class="container">
@@ -617,7 +724,7 @@ const ADMIN_PASSWORD = "sicekat2024";
 //  Daftar gratis: https://fonnte.com → ambil Token
 //  Nomor admin: format 628xxx (tanpa + atau 0)
 // ============================================================
-const FONNTE_TOKEN   = "Pb26QNoJrmDEa2qRA3GJ";
+const FONNTE_TOKEN   = "rhyaW85DYkjGbC422fGF";
 const ADMIN_WA       = "6285733175825"; // contoh: 6281234567890
 
 // ============================================================
@@ -777,6 +884,11 @@ async function submitReport() {
         document.getElementById('succCard').style.display = 'block';
         document.getElementById('succId').textContent     = rid;
         toast('✅ Laporan berhasil dikirim!','ok');
+        // Arahkan ke survei setelah 2.5 detik
+        setTimeout(() => {
+            resetSurvei();
+            showPage('survey');
+        }, 2500);
 
     } catch(e) {
         loading(false);
@@ -823,6 +935,14 @@ async function trackReport() {
         const doc = snap.docs[0];
         document.getElementById('detailCard').innerHTML = buildDetailHTML(doc.data(), doc.id, false);
         showPage('detail');
+        // Tawaran survei setelah 3 detik
+        setTimeout(() => {
+            if (!sessionStorage.getItem('survey_shown')) {
+                sessionStorage.setItem('survey_shown','1');
+                resetSurvei();
+                showPage('survey');
+            }
+        }, 3000);
     } catch(e) {
         loading(false); console.error(e);
         toast('❌ Terjadi kesalahan. Coba lagi.','err');
@@ -1066,6 +1186,47 @@ Cek detail laporan Anda di aplikasi SI-CEKAT dengan memasukkan ID laporan di ata
         });
         console.log('WA terkirim ke', nomorWa);
     } catch(e) { console.warn('Kirim WA gagal:', e); }
+}
+
+
+// ============================================================
+//  SURVEI KEPUASAN PELAYANAN
+// ============================================================
+let surveiNilai = 0;
+
+function resetSurvei() {
+    surveiNilai = 0;
+    document.getElementById('surveyForm').style.display  = 'block';
+    document.getElementById('surveyDone').style.display  = 'none';
+    document.getElementById('surveyCommentBox').style.display = 'none';
+    document.getElementById('btnSurvey').style.display   = 'none';
+    document.getElementById('surveyComment').value       = '';
+    document.querySelectorAll('.face-btn').forEach(b => b.classList.remove('selected'));
+}
+
+function pilihPuas(nilai, el) {
+    surveiNilai = nilai;
+    document.querySelectorAll('.face-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('surveyCommentBox').style.display = 'block';
+    document.getElementById('btnSurvey').style.display        = 'block';
+}
+
+async function kirimSurvei() {
+    if (!surveiNilai) { toast('Pilih tingkat kepuasan dulu', 'info'); return; }
+    const komentar = document.getElementById('surveyComment').value.trim();
+    if (fbOK) {
+        try {
+            await db.collection('survei_kepuasan').add({
+                nilai:    surveiNilai,
+                komentar: komentar,
+                waktu:    firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch(e) { console.warn('Simpan survei gagal:', e); }
+    }
+    document.getElementById('surveyForm').style.display = 'none';
+    document.getElementById('surveyDone').style.display = 'block';
+    toast('💛 Terima kasih atas penilaian Anda!', 'ok');
 }
 
 // ============================================================
