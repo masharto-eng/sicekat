@@ -380,6 +380,23 @@
         }
         .survey-done .s-icon { margin-bottom: 14px; }
 
+    
+        /* ========== REKAP / EXPORT ========== */
+        .sync-status {
+            display:flex; align-items:center; gap:8px;
+            background:rgba(5,150,105,.08);
+            border:1.5px solid rgba(5,150,105,.2);
+            border-radius:10px; padding:10px 14px;
+            font-size:12.5px; font-weight:600;
+            color:#065f46; margin-top:10px;
+            animation: fadeIn .3s ease;
+        }
+        .sync-status.err {
+            background:rgba(220,38,38,.07);
+            border-color:rgba(220,38,38,.2);
+            color:#991b1b;
+        }
+
     </style>
 </head>
 <body>
@@ -659,9 +676,12 @@
         </div>
         <div id="rptList"><div class="empty"><div class="e-icon">📋</div><div class="e-title">Memuat laporan...</div></div></div>
         <br>
-        <button class="btn btn-sm btn-ghost" onclick="loadAdminReports()">🔄 Refresh</button>
-        &nbsp;
-        <button class="btn btn-sm btn-ghost" onclick="adminOut()">🚪 Keluar</button>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;">
+            <button class="btn btn-sm btn-ghost" onclick="loadAdminReports()">🔄 Refresh</button>
+            <button class="btn btn-sm btn-teal" onclick="unduhCSV()">⬇️ Unduh CSV</button>
+            <button class="btn btn-sm" style="background:#0f9d58;color:white;padding:7px 14px;font-size:12px;border-radius:7px;border:none;cursor:pointer;" onclick="syncKeSheets()">📊 Sync ke Sheets</button>
+            <button class="btn btn-sm btn-ghost" onclick="adminOut()">🚪 Keluar</button>
+        </div>
     </div>
 </div>
 
@@ -725,6 +745,12 @@ const ADMIN_PASSWORD = "sicekat2024";
 //  Nomor admin: format 628xxx (tanpa + atau 0)
 // ============================================================
 const FONNTE_TOKEN   = "rhyaW85DYkjGbC422fGF";
+
+// ============================================================
+//  📊 GOOGLE SHEETS — Auto Sync via Apps Script
+//  Ikuti panduan untuk mendapatkan URL ini
+// ============================================================
+const GSHEET_URL = "https://script.google.com/macros/s/AKfycbxY8hmSdzuzxNTVTkyQm-ledspZgvDK-3FTIO64uEY6SYSIT7vFm9Eea2jRhZkDXIoneA/exec";
 const ADMIN_WA       = "6285733175825"; // contoh: 6281234567890
 
 // ============================================================
@@ -884,6 +910,15 @@ async function submitReport() {
         document.getElementById('succCard').style.display = 'block';
         document.getElementById('succId').textContent     = rid;
         toast('✅ Laporan berhasil dikirim!','ok');
+        // Auto-push ke Google Sheets
+        pushSatuKeSheets({
+            reportId: rid, nama, peran, jenis,
+            deskripsi: desk, status:'menunggu', catatan:'',
+            nomorWa: document.getElementById('inpWa')?.value || '',
+            fotoUrl, rating:'',
+            tanggal: new Date().toLocaleString('id-ID'),
+            updatedAt: new Date().toLocaleString('id-ID')
+        });
         // Arahkan ke survei setelah 2.5 detik
         setTimeout(() => {
             resetSurvei();
@@ -1188,6 +1223,99 @@ Cek detail laporan Anda di aplikasi SI-CEKAT dengan memasukkan ID laporan di ata
     } catch(e) { console.warn('Kirim WA gagal:', e); }
 }
 
+
+
+// ============================================================
+//  📊 GOOGLE SHEETS — SYNC & EXPORT
+// ============================================================
+
+// Unduh semua laporan sebagai file CSV
+function unduhCSV() {
+    if (!allRpts.length) { toast('Belum ada laporan untuk diunduh', 'info'); return; }
+
+    const headers = ['ID Laporan','Nama','Peran','Jenis','Deskripsi','Status','Catatan Admin','No. WA','Rating','Tanggal Lapor','Terakhir Update'];
+    const rows = allRpts.map(r => [
+        r.reportId    || '',
+        r.nama        || '',
+        r.peran       || '',
+        r.jenis       || '',
+        (r.deskripsi  || '').replace(/,/g,' ').replace(/\n/g,' '),
+        r.status      || '',
+        (r.catatan    || '').replace(/,/g,' ').replace(/\n/g,' '),
+        r.nomorWa     || '',
+        r.ratingPelapor || '',
+        r.tanggal     ? fmtDate(r.tanggal) : '',
+        r.updatedAt   ? fmtDate(r.updatedAt) : ''
+    ]);
+
+    const csvContent = [headers, ...rows]
+        .map(row => row.map(v => `"${v}"`).join(','))
+        .join('\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const tgl  = new Date().toISOString().slice(0,10);
+    a.href     = url;
+    a.download = `SI-CEKAT-Rekap-${tgl}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('✅ File CSV berhasil diunduh!', 'ok');
+}
+
+// Kirim semua laporan ke Google Sheets via Apps Script
+async function syncKeSheets() {
+    if (GSHEET_URL === 'https://script.google.com/macros/s/AKfycbxY8hmSdzuzxNTVTkyQm-ledspZgvDK-3FTIO64uEY6SYSIT7vFm9Eea2jRhZkDXIoneA/exec') {
+        toast('⚠️ Apps Script URL belum dikonfigurasi', 'err');
+        return;
+    }
+    if (!allRpts.length) { toast('Belum ada laporan', 'info'); return; }
+
+    loading(true, 'Sinkronisasi ke Google Sheets...');
+    try {
+        const payload = allRpts.map(r => ({
+            reportId:      r.reportId    || '',
+            nama:          r.nama        || '',
+            peran:         r.peran       || '',
+            jenis:         r.jenis       || '',
+            deskripsi:     r.deskripsi   || '',
+            status:        r.status      || '',
+            catatan:       r.catatan     || '',
+            nomorWa:       r.nomorWa     || '',
+            rating:        r.ratingPelapor || '',
+            fotoUrl:       r.fotoUrl     || '',
+            tanggal:       r.tanggal     ? fmtDate(r.tanggal)   : '',
+            updatedAt:     r.updatedAt   ? fmtDate(r.updatedAt) : ''
+        }));
+
+        await fetch(GSHEET_URL, {
+            method: 'POST',
+            mode:   'no-cors',
+            headers:{ 'Content-Type': 'application/json' },
+            body:   JSON.stringify({ action: 'syncAll', data: payload })
+        });
+
+        loading(false);
+        toast('✅ Data berhasil disinkronkan ke Google Sheets!', 'ok');
+    } catch(e) {
+        loading(false);
+        console.error(e);
+        toast('❌ Gagal sinkronisasi. Coba lagi.', 'err');
+    }
+}
+
+// Auto-kirim 1 laporan baru ke Sheets saat submit
+async function pushSatuKeSheets(r) {
+    if (GSHEET_URL === 'https://script.google.com/macros/s/AKfycbxY8hmSdzuzxNTVTkyQm-ledspZgvDK-3FTIO64uEY6SYSIT7vFm9Eea2jRhZkDXIoneA/exec') return;
+    try {
+        await fetch(GSHEET_URL, {
+            method: 'POST',
+            mode:   'no-cors',
+            headers:{ 'Content-Type': 'application/json' },
+            body:   JSON.stringify({ action: 'tambahSatu', data: r })
+        });
+    } catch(e) { console.warn('Auto-push Sheets gagal:', e); }
+}
 
 // ============================================================
 //  SURVEI KEPUASAN PELAYANAN
