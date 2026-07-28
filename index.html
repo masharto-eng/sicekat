@@ -919,11 +919,11 @@ async function submitReport() {
             tanggal: new Date().toLocaleString('id-ID'),
             updatedAt: new Date().toLocaleString('id-ID')
         });
-        // Arahkan ke survei setelah 2.5 detik
+        // Arahkan ke survei setelah 5 detik
         setTimeout(() => {
             resetSurvei();
             showPage('survey');
-        }, 2500);
+        }, 5000);
 
     } catch(e) {
         loading(false);
@@ -977,7 +977,7 @@ async function trackReport() {
                 resetSurvei();
                 showPage('survey');
             }
-        }, 3000);
+        }, 5000);
     } catch(e) {
         loading(false); console.error(e);
         toast('❌ Terjadi kesalahan. Coba lagi.','err');
