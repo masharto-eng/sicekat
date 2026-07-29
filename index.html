@@ -923,7 +923,7 @@ async function submitReport() {
         setTimeout(() => {
             resetSurvei();
             showPage('survey');
-        }, 2500);
+        }, 15000);
 
     } catch(e) {
         loading(false);
@@ -977,7 +977,7 @@ async function trackReport() {
                 resetSurvei();
                 showPage('survey');
             }
-        }, 3000);
+        }, 15000);
     } catch(e) {
         loading(false); console.error(e);
         toast('❌ Terjadi kesalahan. Coba lagi.','err');
