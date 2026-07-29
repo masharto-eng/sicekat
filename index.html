@@ -919,11 +919,11 @@ async function submitReport() {
             tanggal: new Date().toLocaleString('id-ID'),
             updatedAt: new Date().toLocaleString('id-ID')
         });
-        // Arahkan ke survei setelah 5 detik
+        // Arahkan ke survei setelah 2.5 detik
         setTimeout(() => {
             resetSurvei();
             showPage('survey');
-        }, 5000);
+        }, 2500);
 
     } catch(e) {
         loading(false);
@@ -977,7 +977,7 @@ async function trackReport() {
                 resetSurvei();
                 showPage('survey');
             }
-        }, 5000);
+        }, 3000);
     } catch(e) {
         loading(false); console.error(e);
         toast('❌ Terjadi kesalahan. Coba lagi.','err');
@@ -1265,7 +1265,7 @@ function unduhCSV() {
 
 // Kirim semua laporan ke Google Sheets via Apps Script
 async function syncKeSheets() {
-    if (GSHEET_URL === 'https://script.google.com/macros/s/AKfycbxY8hmSdzuzxNTVTkyQm-ledspZgvDK-3FTIO64uEY6SYSIT7vFm9Eea2jRhZkDXIoneA/exec') {
+    if (GSHEET_URL === 'GANTI_APPS_SCRIPT_URL') {
         toast('⚠️ Apps Script URL belum dikonfigurasi', 'err');
         return;
     }
@@ -1306,7 +1306,7 @@ async function syncKeSheets() {
 
 // Auto-kirim 1 laporan baru ke Sheets saat submit
 async function pushSatuKeSheets(r) {
-    if (GSHEET_URL === 'https://script.google.com/macros/s/AKfycbxY8hmSdzuzxNTVTkyQm-ledspZgvDK-3FTIO64uEY6SYSIT7vFm9Eea2jRhZkDXIoneA/exec') return;
+    if (GSHEET_URL === 'GANTI_APPS_SCRIPT_URL') return;
     try {
         await fetch(GSHEET_URL, {
             method: 'POST',
