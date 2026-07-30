@@ -397,6 +397,88 @@
             color:#991b1b;
         }
 
+    
+        /* ========== POPUP KONFIRMASI SURVEI ========== */
+        .popup-over {
+            display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,.55); z-index:400;
+            align-items:center; justify-content:center; padding:18px;
+        }
+        .popup-over.open { display:flex; animation: fadeIn .25s ease; }
+        .popup-box {
+            background:white; border-radius:20px;
+            padding:28px 22px; width:100%; max-width:370px;
+            text-align:center; box-shadow:0 12px 40px rgba(0,0,0,.2);
+            position:relative;
+        }
+        .popup-emoji { font-size:46px; margin-bottom:12px; display:block; }
+        .popup-title { font-size:16px; font-weight:800; color:var(--navy); margin-bottom:8px; line-height:1.4; }
+        .popup-sub   { font-size:12.5px; color:var(--muted); line-height:1.7; margin-bottom:20px; }
+        .popup-timer {
+            font-size:11.5px; color:var(--teal); font-weight:700;
+            margin-bottom:16px;
+        }
+        .popup-btns  { display:flex; gap:10px; }
+        .popup-btns .btn { flex:1; }
+
+        /* ========== HALAMAN SURVEI LENGKAP ========== */
+        .survey-hero {
+            text-align:center; padding:22px 12px 14px;
+        }
+        .survey-emoji-lg { font-size:42px; margin-bottom:10px; display:block; }
+        .survey-title-lg { font-size:18px; font-weight:800; color:var(--navy); margin-bottom:6px; line-height:1.35; }
+        .survey-sub-lg   { font-size:12.5px; color:var(--muted); line-height:1.7; }
+
+        .survey-q {
+            background:white; border-radius:14px;
+            padding:18px 18px 14px; margin-bottom:11px;
+            box-shadow:0 2px 10px rgba(0,0,0,.06);
+        }
+        .survey-q-label {
+            font-size:13px; font-weight:700; color:var(--text);
+            margin-bottom:12px; line-height:1.55;
+        }
+        .survey-q-num {
+            display:inline-flex; align-items:center; justify-content:center;
+            width:22px; height:22px; border-radius:6px;
+            background:var(--teal); color:white;
+            font-size:11px; font-weight:800;
+            margin-right:7px; flex-shrink:0; vertical-align:middle;
+        }
+        .likert-wrap {
+            display:flex; justify-content:space-between;
+            gap:5px; margin-top:4px;
+        }
+        .likert-opt input { display:none; }
+        .likert-opt { flex:1; text-align:center; }
+        .likert-opt label {
+            display:flex; flex-direction:column; align-items:center;
+            gap:4px; cursor:pointer;
+            padding:8px 4px; border:2px solid var(--border);
+            border-radius:10px; transition:all .18s;
+            font-size:10.5px; color:var(--muted); font-weight:600;
+            font-family:'Plus Jakarta Sans',sans-serif;
+        }
+        .likert-opt label .lk-emoji { font-size:22px; line-height:1; }
+        .likert-opt input:checked + label {
+            border-color:var(--teal);
+            background:rgba(13,148,136,.09);
+            color:var(--teal);
+        }
+        .likert-opt label:hover { border-color:var(--teal); }
+
+        .survey-progress {
+            background:var(--border); border-radius:10px;
+            height:5px; margin:14px 0 18px; overflow:hidden;
+        }
+        .survey-progress-bar {
+            height:100%; background:var(--teal);
+            border-radius:10px; transition:width .4s ease;
+        }
+        .survey-done-box {
+            text-align:center; padding:28px 16px;
+        }
+
     </style>
 </head>
 <body>
@@ -550,6 +632,7 @@
                 <div class="s-id" id="succId">–</div>
                 <p class="s-warning">⚠️ Screenshot atau catat ID ini. Anda membutuhkannya untuk cek status.</p>
                 <button class="btn btn-teal btn-full" onclick="copyId()" style="margin-bottom:9px;">📋 &nbsp;Salin ID Laporan</button>
+                <button class="btn btn-red btn-full" onclick="keHalamanSurvei()" style="margin-bottom:9px;">💛 &nbsp;Nilai Pelayanan Kami</button>
                 <button class="btn btn-ghost btn-full" style="margin-bottom:9px;" onclick="showPage('track')">🔍 &nbsp;Cek Status Laporan</button>
                 <button class="btn btn-ghost btn-full" onclick="resetForm()">📝 &nbsp;Buat Laporan Baru</button>
             </div>
@@ -585,60 +668,145 @@
     <div class="container">
         <div class="card" id="surveyForm">
             <div class="survey-hero">
-                <span class="survey-emoji">💛</span>
-                <div class="survey-title">Seberapa puas Anda dengan<br>Pelayanan SMANIBA?</div>
-                <div class="survey-sub">Penilaian Anda membantu kami terus berkembang</div>
+                <span class="survey-emoji-lg">📋</span>
+                <div class="survey-title-lg">Survei Kepuasan Masyarakat<br>SMAN 1 Balongpanggang</div>
+                <div class="survey-sub-lg">Berikan penilaian jujur Anda. Hasil survei ini digunakan untuk meningkatkan kualitas layanan sekolah.</div>
             </div>
 
-            <div class="face-grid" id="faceGrid">
-                <button class="face-btn" onclick="pilihPuas(1, this)">
-                    <span class="face-icon">😡</span>
-                    <span class="face-lbl">Sangat<br>Tidak Puas</span>
-                </button>
-                <button class="face-btn" onclick="pilihPuas(2, this)">
-                    <span class="face-icon">😞</span>
-                    <span class="face-lbl">Tidak<br>Puas</span>
-                </button>
-                <button class="face-btn" onclick="pilihPuas(3, this)">
-                    <span class="face-icon">😐</span>
-                    <span class="face-lbl">Cukup<br>Puas</span>
-                </button>
-                <button class="face-btn" onclick="pilihPuas(4, this)">
-                    <span class="face-icon">😊</span>
-                    <span class="face-lbl">Puas</span>
-                </button>
-                <button class="face-btn" onclick="pilihPuas(5, this)">
-                    <span class="face-icon">🤩</span>
-                    <span class="face-lbl">Sangat<br>Puas</span>
-                </button>
+            <div class="survey-progress">
+                <div class="survey-progress-bar" id="surveyBar" style="width:0%"></div>
+            </div>
+            <div style="text-align:right;font-size:11px;color:var(--muted);margin-top:-10px;margin-bottom:14px;" id="surveyCount">0 dari 7 pertanyaan dijawab</div>
+
+            <!-- Q1 -->
+            <div class="survey-q">
+                <div class="survey-q-label"><span class="survey-q-num">1</span>Bagaimana kemudahan penggunaan aplikasi <strong>SI-CEKAT</strong> ini?</div>
+                <div class="likert-wrap">
+                    <div class="likert-opt"><input type="radio" name="sq1" id="sq1a" value="1"><label for="sq1a"><span class="lk-emoji">😡</span>Sangat Sulit</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq1" id="sq1b" value="2"><label for="sq1b"><span class="lk-emoji">😞</span>Sulit</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq1" id="sq1c" value="3"><label for="sq1c"><span class="lk-emoji">😐</span>Cukup</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq1" id="sq1d" value="4"><label for="sq1d"><span class="lk-emoji">😊</span>Mudah</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq1" id="sq1e" value="5"><label for="sq1e"><span class="lk-emoji">🤩</span>Sangat Mudah</label></div>
+                </div>
             </div>
 
-            <div class="form-group survey-comment" id="surveyCommentBox" style="display:none;">
-                <label class="form-label">Komentar atau Saran <span style="color:var(--muted);font-weight:400;">(opsional)</span></label>
+            <!-- Q2 -->
+            <div class="survey-q">
+                <div class="survey-q-label"><span class="survey-q-num">2</span>Seberapa cepat sekolah menindaklanjuti <strong>laporan/pengaduan</strong> yang masuk?</div>
+                <div class="likert-wrap">
+                    <div class="likert-opt"><input type="radio" name="sq2" id="sq2a" value="1"><label for="sq2a"><span class="lk-emoji">😡</span>Sangat Lambat</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq2" id="sq2b" value="2"><label for="sq2b"><span class="lk-emoji">😞</span>Lambat</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq2" id="sq2c" value="3"><label for="sq2c"><span class="lk-emoji">😐</span>Cukup</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq2" id="sq2d" value="4"><label for="sq2d"><span class="lk-emoji">😊</span>Cepat</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq2" id="sq2e" value="5"><label for="sq2e"><span class="lk-emoji">🤩</span>Sangat Cepat</label></div>
+                </div>
+            </div>
+
+            <!-- Q3 -->
+            <div class="survey-q">
+                <div class="survey-q-label"><span class="survey-q-num">3</span>Bagaimana <strong>keramahan dan profesionalisme</strong> guru & staf SMAN 1 Balongpanggang?</div>
+                <div class="likert-wrap">
+                    <div class="likert-opt"><input type="radio" name="sq3" id="sq3a" value="1"><label for="sq3a"><span class="lk-emoji">😡</span>Sangat Buruk</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq3" id="sq3b" value="2"><label for="sq3b"><span class="lk-emoji">😞</span>Buruk</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq3" id="sq3c" value="3"><label for="sq3c"><span class="lk-emoji">😐</span>Cukup</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq3" id="sq3d" value="4"><label for="sq3d"><span class="lk-emoji">😊</span>Baik</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq3" id="sq3e" value="5"><label for="sq3e"><span class="lk-emoji">🤩</span>Sangat Baik</label></div>
+                </div>
+            </div>
+
+            <!-- Q4 -->
+            <div class="survey-q">
+                <div class="survey-q-label"><span class="survey-q-num">4</span>Bagaimana kondisi <strong>fasilitas dan sarana prasarana</strong> sekolah saat ini?</div>
+                <div class="likert-wrap">
+                    <div class="likert-opt"><input type="radio" name="sq4" id="sq4a" value="1"><label for="sq4a"><span class="lk-emoji">😡</span>Sangat Buruk</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq4" id="sq4b" value="2"><label for="sq4b"><span class="lk-emoji">😞</span>Buruk</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq4" id="sq4c" value="3"><label for="sq4c"><span class="lk-emoji">😐</span>Cukup</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq4" id="sq4d" value="4"><label for="sq4d"><span class="lk-emoji">😊</span>Baik</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq4" id="sq4e" value="5"><label for="sq4e"><span class="lk-emoji">🤩</span>Sangat Baik</label></div>
+                </div>
+            </div>
+
+            <!-- Q5 -->
+            <div class="survey-q">
+                <div class="survey-q-label"><span class="survey-q-num">5</span>Bagaimana kualitas <strong>komunikasi sekolah</strong> kepada siswa, guru, dan orang tua?</div>
+                <div class="likert-wrap">
+                    <div class="likert-opt"><input type="radio" name="sq5" id="sq5a" value="1"><label for="sq5a"><span class="lk-emoji">😡</span>Sangat Buruk</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq5" id="sq5b" value="2"><label for="sq5b"><span class="lk-emoji">😞</span>Buruk</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq5" id="sq5c" value="3"><label for="sq5c"><span class="lk-emoji">😐</span>Cukup</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq5" id="sq5d" value="4"><label for="sq5d"><span class="lk-emoji">😊</span>Baik</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq5" id="sq5e" value="5"><label for="sq5e"><span class="lk-emoji">🤩</span>Sangat Baik</label></div>
+                </div>
+            </div>
+
+            <!-- Q6 -->
+            <div class="survey-q">
+                <div class="survey-q-label"><span class="survey-q-num">6</span>Seberapa puas Anda dengan <strong>pelayanan administrasi</strong> (tata usaha, surat-menyurat, dll)?</div>
+                <div class="likert-wrap">
+                    <div class="likert-opt"><input type="radio" name="sq6" id="sq6a" value="1"><label for="sq6a"><span class="lk-emoji">😡</span>Sangat Tidak Puas</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq6" id="sq6b" value="2"><label for="sq6b"><span class="lk-emoji">😞</span>Tidak Puas</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq6" id="sq6c" value="3"><label for="sq6c"><span class="lk-emoji">😐</span>Cukup</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq6" id="sq6d" value="4"><label for="sq6d"><span class="lk-emoji">😊</span>Puas</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq6" id="sq6e" value="5"><label for="sq6e"><span class="lk-emoji">🤩</span>Sangat Puas</label></div>
+                </div>
+            </div>
+
+            <!-- Q7 -->
+            <div class="survey-q">
+                <div class="survey-q-label"><span class="survey-q-num">7</span>Secara <strong>keseluruhan</strong>, bagaimana penilaian Anda terhadap layanan SMAN 1 Balongpanggang?</div>
+                <div class="likert-wrap">
+                    <div class="likert-opt"><input type="radio" name="sq7" id="sq7a" value="1"><label for="sq7a"><span class="lk-emoji">😡</span>Sangat Buruk</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq7" id="sq7b" value="2"><label for="sq7b"><span class="lk-emoji">😞</span>Buruk</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq7" id="sq7c" value="3"><label for="sq7c"><span class="lk-emoji">😐</span>Cukup</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq7" id="sq7d" value="4"><label for="sq7d"><span class="lk-emoji">😊</span>Baik</label></div>
+                    <div class="likert-opt"><input type="radio" name="sq7" id="sq7e" value="5"><label for="sq7e"><span class="lk-emoji">🤩</span>Sangat Baik</label></div>
+                </div>
+            </div>
+
+            <!-- Saran Terbuka -->
+            <div class="survey-q">
+                <div class="survey-q-label">💬 &nbsp;Saran atau masukan untuk SMAN 1 Balongpanggang <span style="font-weight:400;color:var(--muted)">(opsional)</span></div>
                 <textarea class="form-textarea" id="surveyComment"
-                    placeholder="Ceritakan pengalaman Anda atau berikan saran untuk SMANIBA..."
-                    style="min-height:80px;"></textarea>
+                    placeholder="Tuliskan saran, harapan, atau masukan Anda di sini..."
+                    style="min-height:80px;" onchange="updateProgress()"></textarea>
             </div>
 
-            <button class="btn btn-teal btn-full" id="btnSurvey" onclick="kirimSurvei()"
-                style="display:none;margin-top:6px;">
-                💌 &nbsp;Kirim Penilaian
+            <button class="btn btn-teal btn-full" id="btnSurvey" onclick="kirimSurvei()" style="margin-top:4px;">
+                💌 &nbsp;Kirim Survei
             </button>
-
-            <div class="survey-skip" onclick="showPage('home')">Lewati, kembali ke beranda →</div>
+            <div style="text-align:center;margin-top:8px;font-size:11.5px;color:var(--muted);">
+                Minimal jawab <strong>1 pertanyaan</strong> untuk mengirim survei
+            </div>
         </div>
 
         <div class="card" id="surveyDone" style="display:none;">
-            <div class="survey-done">
-                <div class="s-icon">🎉</div>
+            <div class="survey-done-box">
+                <div class="s-icon" style="background:#d1fae5;">🎉</div>
                 <h3 style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px;">Terima Kasih!</h3>
                 <p style="color:var(--muted);font-size:13.5px;line-height:1.75;">
                     Penilaian Anda sangat berarti bagi SMAN 1 Balongpanggang.<br>
-                    Kami akan terus berusaha memberikan pelayanan terbaik. 🙏
+                    Kami berkomitmen untuk terus meningkatkan pelayanan. 🙏
                 </p>
                 <br>
                 <button class="btn btn-teal btn-full" onclick="showPage('home')">🏠 &nbsp;Kembali ke Beranda</button>
             </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ================================================ POPUP SURVEI -->
+<div class="popup-over" id="surveyPopup">
+    <div class="popup-box">
+        <span class="popup-emoji">📋</span>
+        <div class="popup-title">Bantu Kami Berkembang!</div>
+        <div class="popup-sub">
+            Bersediakah Anda mengisi <strong>Survei Kepuasan Masyarakat</strong>
+            terhadap layanan SMAN 1 Balongpanggang?<br>
+            Hanya butuh <strong>±2 menit</strong> 🙏
+        </div>
+        <div class="popup-btns">
+            <button class="btn btn-ghost" onclick="tolakSurvei()">❌ Tidak</button>
+            <button class="btn btn-teal" onclick="terimasurvei()">✅ Ya, Saya Bersedia</button>
         </div>
     </div>
 </div>
@@ -910,6 +1078,8 @@ async function submitReport() {
         document.getElementById('succCard').style.display = 'block';
         document.getElementById('succId').textContent     = rid;
         toast('✅ Laporan berhasil dikirim!','ok');
+        // Jadwalkan popup survei setelah 30 detik
+        jadwalkanPopupSurvei();
         // Auto-push ke Google Sheets
         pushSatuKeSheets({
             reportId: rid, nama, peran, jenis,
@@ -919,11 +1089,6 @@ async function submitReport() {
             tanggal: new Date().toLocaleString('id-ID'),
             updatedAt: new Date().toLocaleString('id-ID')
         });
-        // Arahkan ke survei setelah 2.5 detik
-        setTimeout(() => {
-            resetSurvei();
-            showPage('survey');
-        }, 15000);
 
     } catch(e) {
         loading(false);
@@ -970,14 +1135,6 @@ async function trackReport() {
         const doc = snap.docs[0];
         document.getElementById('detailCard').innerHTML = buildDetailHTML(doc.data(), doc.id, false);
         showPage('detail');
-        // Tawaran survei setelah 3 detik
-        setTimeout(() => {
-            if (!sessionStorage.getItem('survey_shown')) {
-                sessionStorage.setItem('survey_shown','1');
-                resetSurvei();
-                showPage('survey');
-            }
-        }, 15000);
     } catch(e) {
         loading(false); console.error(e);
         toast('❌ Terjadi kesalahan. Coba lagi.','err');
@@ -1012,6 +1169,13 @@ function buildDetailHTML(d, docId, isAdmin) {
         <div class="d-row" style="flex-direction:column;gap:7px;"><div class="d-lbl">Deskripsi</div><div class="d-val" style="line-height:1.75;">${d.deskripsi}</div></div>
         ${noteBlock}${fotoBlock}
         ${!isAdmin && d.status === 'selesai' ? buildLaporanRating(d, docId) : ''}
+        ${!isAdmin ? `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);text-align:center;">
+            <button class="btn btn-full" onclick="keHalamanSurvei()"
+                style="background:linear-gradient(135deg,#f59e0b,#d97706);color:white;font-size:13px;">
+                💛 &nbsp;Nilai Pelayanan SMANIBA
+            </button>
+            <div style="font-size:11px;color:var(--muted);margin-top:7px;">Bantu kami berkembang dengan memberikan penilaian</div>
+        </div>` : ''}
         ${adminBtn}`;
 }
 
@@ -1318,43 +1482,118 @@ async function pushSatuKeSheets(r) {
 }
 
 // ============================================================
-//  SURVEI KEPUASAN PELAYANAN
+//  POPUP SURVEI — muncul 30 detik setelah laporan dikirim
 // ============================================================
-let surveiNilai = 0;
+let surveyTimer = null;
 
+function jadwalkanPopupSurvei() {
+    // Bersihkan timer lama jika ada
+    if (surveyTimer) clearTimeout(surveyTimer);
+    surveyTimer = setTimeout(() => {
+        // Hanya tampilkan jika masih di halaman form (sukses)
+        if (document.getElementById('succCard').style.display !== 'none' ||
+            document.getElementById('page-form').classList.contains('active')) {
+            bukaPopupSurvei();
+        }
+    }, 30000); // 30 detik
+}
+
+function bukaPopupSurvei() {
+    document.getElementById('surveyPopup').classList.add('open');
+}
+
+function tutupPopupSurvei() {
+    document.getElementById('surveyPopup').classList.remove('open');
+}
+
+function tolakSurvei() {
+    tutupPopupSurvei();
+    toast('Terima kasih! Anda dapat mengisi survei kapan saja.', 'info');
+}
+
+function terimasurvei() {
+    tutupPopupSurvei();
+    resetSurvei();
+    showPage('survey');
+}
+
+// ============================================================
+//  SURVEI KEPUASAN — 7 Pertanyaan SKM
+// ============================================================
 function resetSurvei() {
-    surveiNilai = 0;
-    document.getElementById('surveyForm').style.display  = 'block';
-    document.getElementById('surveyDone').style.display  = 'none';
-    document.getElementById('surveyCommentBox').style.display = 'none';
-    document.getElementById('btnSurvey').style.display   = 'none';
-    document.getElementById('surveyComment').value       = '';
-    document.querySelectorAll('.face-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('surveyForm').style.display = 'block';
+    document.getElementById('surveyDone').style.display = 'none';
+    document.getElementById('surveyComment').value      = '';
+    // Reset semua radio
+    for (let i = 1; i <= 7; i++) {
+        document.querySelectorAll(`input[name="sq${i}"]`).forEach(r => r.checked = false);
+    }
+    updateProgress();
 }
 
-function pilihPuas(nilai, el) {
-    surveiNilai = nilai;
-    document.querySelectorAll('.face-btn').forEach(b => b.classList.remove('selected'));
-    el.classList.add('selected');
-    document.getElementById('surveyCommentBox').style.display = 'block';
-    document.getElementById('btnSurvey').style.display        = 'block';
+function updateProgress() {
+    let answered = 0;
+    for (let i = 1; i <= 7; i++) {
+        if (document.querySelector(`input[name="sq${i}"]:checked`)) answered++;
+    }
+    const pct = Math.round((answered / 7) * 100);
+    document.getElementById('surveyBar').style.width = pct + '%';
+    document.getElementById('surveyCount').textContent = `${answered} dari 7 pertanyaan dijawab`;
 }
+
+// Pasang event listener untuk update progress saat radio dipilih
+document.addEventListener('change', e => {
+    if (e.target && e.target.name && e.target.name.startsWith('sq')) {
+        updateProgress();
+    }
+});
 
 async function kirimSurvei() {
-    if (!surveiNilai) { toast('Pilih tingkat kepuasan dulu', 'info'); return; }
+    // Minimal 1 pertanyaan harus dijawab
+    let answered = 0;
+    const jawaban = {};
+    const labels = [
+        'Kemudahan SI-CEKAT',
+        'Kecepatan Penanganan',
+        'Keramahan Staf',
+        'Kondisi Fasilitas',
+        'Kualitas Komunikasi',
+        'Pelayanan Administrasi',
+        'Penilaian Keseluruhan'
+    ];
+    for (let i = 1; i <= 7; i++) {
+        const val = document.querySelector(`input[name="sq${i}"]:checked`);
+        if (val) {
+            answered++;
+            jawaban[`q${i}_${labels[i-1]}`] = parseInt(val.value);
+        }
+    }
+    if (answered === 0) {
+        toast('❌ Jawab minimal 1 pertanyaan terlebih dahulu', 'err');
+        return;
+    }
+
     const komentar = document.getElementById('surveyComment').value.trim();
+    const rataRata = answered > 0
+        ? (Object.values(jawaban).reduce((a,b) => a+b, 0) / answered).toFixed(2)
+        : 0;
+
+    loading(true, 'Mengirim survei...');
     if (fbOK) {
         try {
             await db.collection('survei_kepuasan').add({
-                nilai:    surveiNilai,
-                komentar: komentar,
-                waktu:    firebase.firestore.FieldValue.serverTimestamp()
+                ...jawaban,
+                komentar:   komentar,
+                rataRata:   parseFloat(rataRata),
+                jumlahDijawab: answered,
+                waktu:      firebase.firestore.FieldValue.serverTimestamp()
             });
         } catch(e) { console.warn('Simpan survei gagal:', e); }
     }
+    loading(false);
     document.getElementById('surveyForm').style.display = 'none';
     document.getElementById('surveyDone').style.display = 'block';
-    toast('💛 Terima kasih atas penilaian Anda!', 'ok');
+    toast('💛 Survei berhasil dikirim! Terima kasih.', 'ok');
 }
 
 // ============================================================
