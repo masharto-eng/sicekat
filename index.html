@@ -1080,6 +1080,15 @@ async function submitReport() {
         toast('✅ Laporan berhasil dikirim!','ok');
         // Jadwalkan popup survei setelah 30 detik
         jadwalkanPopupSurvei();
+        // ✅ Kirim notif WA ke admin langsung dari browser pelapor
+        //    (tidak perlu admin sedang login)
+        kirimWaAdmin({
+            reportId:  rid,
+            nama:      nama,
+            peran:     peran,
+            jenis:     jenis,
+            deskripsi: desk
+        });
         // Auto-push ke Google Sheets
         pushSatuKeSheets({
             reportId: rid, nama, peran, jenis,
@@ -1301,8 +1310,6 @@ async function startAdminNotif() {
                     const d = change.doc.data();
                     showBrowserNotif(d);
                     toast(`🔔 Laporan baru dari ${d.nama}!`, 'info');
-                    // Kirim WA ke admin
-                    kirimWaAdmin(d);
                     // Refresh list jika halaman admin sedang aktif
                     if (document.getElementById('page-admin').classList.contains('active')) {
                         loadAdminReports();
